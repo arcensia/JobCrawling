@@ -30,7 +30,7 @@ from discord_notifier import send_header, send_top_jobs, send_rest_jobs, save_re
 from agent_rank import agent_rank
 from job_pool import (
     load_pool, save_pool,
-    update_pool, sync_applied, flush_closed,
+    update_pool, flush_closed,
     get_candidates, pool_summary,
 )
 
@@ -113,13 +113,13 @@ def main(mode: str = "today", no_rank: bool = False):
     pool = load_pool()
     pool = update_pool(pool, all_jobs, today)
 
-    applied = load_applied()
-    pool = sync_applied(pool, applied)
     pool = flush_closed(pool)
 
     summary = pool_summary(pool)
-    print(f"[pool] open={summary['open']} / applied={summary['applied']} / 전체={len(pool)}")
+    print(f"[pool] open={summary['open']} / 지원={summary['applied']} / 관심={summary['interested']} / 전체={len(pool)}")
     save_pool(pool)
+
+    applied = load_applied()
 
     # 3. 리포트 저장 (전체 open 공고 기준)
     open_jobs = [e["job"] for e in pool.values() if e["status"] == "open"]
