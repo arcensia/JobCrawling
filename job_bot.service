@@ -1,0 +1,18 @@
+[Unit]
+Description=채용공고 수집 봇
+After=network.target
+
+[Service]
+Type=simple
+User=kim-yeonghyeon
+WorkingDirectory=/Users/kim-yeonghyeon/workplace/job_crowling
+Environment=PYTHONPATH=/Users/kim-yeonghyeon/workplace/job_crowling
+Environment=VIRTUAL_ENV=/Users/kim-yeonghyeon/workplace/job_crowling/venv
+ExecStart=/Users/kim-yeonghyeon/workplace/job_crowling/venv/bin/python3 /Users/kim-yeonghyeon/workplace/job_crowling/job_bot_main.py
+Restart=on-failure
+RestartSec=60
+StandardOutput=append:/Users/kim-yeonghyeon/workplace/job_crowling/logs/job_bot.stdout.log
+StandardError=append:/Users/kim-yeonghyeon/workplace/job_crowling/logs/job_bot.stderr.log
+
+[Install]
+WantedBy=multi-user.target
