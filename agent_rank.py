@@ -17,6 +17,18 @@ from pathlib import Path
 BASE_DIR = Path(__file__).parent
 RESUME_DIR = BASE_DIR / "resume"
 
+_MODE_CONTEXT = {
+    "today": (
+        "이 공고들은 오늘 새로 올라온 공고야. "
+        "신규인 만큼 빠르게 지원할 가치가 있는 것을 우선순위로 뽑아줘."
+    ),
+    "cumulative": (
+        "이 공고들은 현재 열려있는 공고 전체야. "
+        "지금 시점에서 지원자에게 가장 적합한 것을 골라줘. "
+        "오래 열려있는 공고라도 좋은 포지션이면 적극 추천해."
+    ),
+}
+
 PROMPT_TEMPLATE = """\
 너는 백엔드 개발자 취업 멘토야. 지원자의 이력서를 읽고 아래 공고 리스트에서 \
 가장 적합한 Top {top_n}개를 골라줘.
@@ -24,6 +36,9 @@ PROMPT_TEMPLATE = """\
 이력서 파일을 Read 툴로 읽어서 참고해:
 - {resume_path}
 - {career_path}
+
+[모드 안내]
+{mode_context}
 
 ---
 공고 리스트 (JSON):
@@ -51,7 +66,7 @@ PROMPT_TEMPLATE = """\
 """
 
 
-def agent_rank(jobs: list, top_n: int = 10) -> tuple[list, list] | None:
+def agent_rank(jobs: list, top_n: int = 10, mode: str = "today") -> tuple[list, list] | None:
     """
     Claude Code CLI로 이력서 기반 공고 랭킹.
     반환: (top_jobs, rest_jobs) 또는 None(실패 시 fallback 사용)
@@ -87,6 +102,7 @@ def agent_rank(jobs: list, top_n: int = 10) -> tuple[list, list] | None:
         top_n=top_n,
         resume_path=resume_path,
         career_path=career_path,
+        mode_context=_MODE_CONTEXT.get(mode, _MODE_CONTEXT["today"]),
         jobs_json=jobs_json,
     )
 

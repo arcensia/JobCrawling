@@ -48,13 +48,13 @@ def _post(webhook_url: str, payload: dict) -> str | None:
     return r.json().get("id")
 
 
-def send_header(webhook_url: str, total: int, top_n: int, today: str):
+def send_header(webhook_url: str, total: int, top_n: int, today: str, mode_label: str = "오늘 신규"):
     payload = {
         "embeds": [{
-            "title": f"📋 오늘의 채용공고 — {today}",
+            "title": f"📋 채용공고 추천 [{mode_label}] — {today}",
             "description": (
                 f"백엔드 / 풀스택 · 주니어(1~3년) · 서울/수도권\n"
-                f"총 **{total}건** 수집 → 이력서 매칭 **Top {top_n}건** 상세 안내\n\n"
+                f"후보 **{total}건** → 이력서 매칭 **Top {top_n}건** 상세 안내\n\n"
                 f"{REACTION_GUIDE}"
             ),
             "color": 0x5865F2,
