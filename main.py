@@ -23,6 +23,7 @@ from pathlib import Path
 from job_bot import load_config, collect_all, to_xlsx, to_html, REPORTS_DIR
 from snapshot import fetch_snapshots_batch, job_id as make_job_id
 from discord_notifier import send_header, send_top_jobs, send_rest_jobs, save_records
+from agent_rank import agent_rank
 
 BASE_DIR = Path(__file__).parent
 RESUME_DIR = BASE_DIR / "resume"
@@ -134,9 +135,18 @@ def main(no_rank: bool = False):
     (REPORTS_DIR / f"jobs_{today}.html").write_text(html, encoding="utf-8")
     print(f"[report] 저장 완료: {xlsx_path.name}")
 
-    # 4. 랭킹 (--no-rank 이면 단순 정렬)
-    top_jobs, rest_jobs = rank_jobs_simple(jobs, top_n)
-    print(f"[rank] Top {len(top_jobs)} / 나머지 {len(rest_jobs)}")
+    # 4. 랭킹 — Claude 에이전트 우선, 실패 시 키워드 점수 fallback
+    if not no_rank:
+        agent_result = agent_rank(jobs, top_n)
+        if agent_result:
+            top_jobs, rest_jobs = agent_result
+            print(f"[rank] 에이전트 Top {len(top_jobs)} / 나머지 {len(rest_jobs)}")
+        else:
+            top_jobs, rest_jobs = rank_jobs_simple(jobs, top_n)
+            print(f"[rank] fallback Top {len(top_jobs)} / 나머지 {len(rest_jobs)}")
+    else:
+        top_jobs, rest_jobs = rank_jobs_simple(jobs, top_n)
+        print(f"[rank] --no-rank Top {len(top_jobs)} / 나머지 {len(rest_jobs)}")
 
     # 5. Top N 스냅샷
     print(f"[snapshot] Top {len(top_jobs)}건 원문 저장 중...")

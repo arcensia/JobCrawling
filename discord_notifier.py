@@ -91,11 +91,21 @@ def send_top_jobs(
         snap_path = job_snapshots.get(jid)
 
         rank_emoji = ["🥇","🥈","🥉"] + ["🔹"] * 97
+        reason = job.get("_reason", "")
+        fit_points = job.get("_fit_points", [])
+        red_flags = job.get("_red_flags", [])
+
         desc_lines = [
             f"🏢 **{company}**",
             f"📍 {location}",
         ]
-        if tags:
+        if reason:
+            desc_lines.append(f"\n💡 {reason}")
+        if fit_points:
+            desc_lines.append("✅ " + " / ".join(fit_points[:3]))
+        if red_flags:
+            desc_lines.append("⚠️ " + " / ".join(red_flags[:2]))
+        if tags and not fit_points:
             desc_lines.append(f"🏷 {tags[:100]}")
         if snap_path:
             desc_lines.append("💾 스냅샷 저장됨")
