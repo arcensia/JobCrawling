@@ -1,0 +1,20 @@
+{
+  "keywords": ["백엔드 개발자", "서버 개발자", "풀스택 개발자", "Python 개발자", "Java 개발자", "Node.js 개발자", "Spring 개발자"],
+  "exclude_keywords": ["시니어만", "5년 이상 필수", "10년 이상"],
+  "years_min": 1,
+  "years_max": 3,
+  "include_newbie": true,
+  "locations": ["서울", "경기", "인천", "수도권", "원격", "재택"],
+  "sites": {
+    "wanted": true,
+    "saramin": true,
+    "jobkorea": true
+  },
+  "max_per_site": 15,
+  "discord": {
+    "webhook_url": "https://discord.com/api/webhooks/YOUR_WEBHOOK_URL",
+    "bot_token": "YOUR_BOT_TOKEN",
+    "channel_id": "YOUR_CHANNEL_ID",
+    "top_n": 10
+  }
+}
