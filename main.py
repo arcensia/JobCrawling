@@ -98,7 +98,14 @@ def main(mode: str = "today", no_rank: bool = False):
 
     print(f"=== 채용공고 수집 시작 ({today}) [mode={mode}] ===")
 
-    # 1. 크롤링
+    # 1. 리액션 자동 동기화 (봇 꺼져 있어도 놓치지 않음)
+    try:
+        from reaction_sync import sync_once
+        sync_once()
+    except Exception as e:
+        print(f"[sync] 자동 동기화 실패 (계속 진행): {e}")
+
+    # 2. 크롤링
     all_jobs = collect_all(cfg)
     print(f"[crawl] {len(all_jobs)}건 수집")
 
@@ -130,8 +137,9 @@ def main(mode: str = "today", no_rank: bool = False):
     print(f"[candidates] {len(candidates)}건 ({mode} 모드)")
 
     # 5. 랭킹
+    applied_companies = list({a["company"] for a in applied if a.get("status") == "applied"})
     if not no_rank:
-        agent_result = agent_rank(candidates, top_n, mode=mode)
+        agent_result = agent_rank(candidates, top_n, mode=mode, applied_companies=applied_companies)
         if agent_result:
             top_jobs, rest_jobs = agent_result
             print(f"[rank] 에이전트 Top {len(top_jobs)} / 나머지 {len(rest_jobs)}")
@@ -143,6 +151,7 @@ def main(mode: str = "today", no_rank: bool = False):
         print(f"[rank] --no-rank Top {len(top_jobs)} / 나머지 {len(rest_jobs)}")
 
     # 6. Top N 스냅샷
+
     print(f"[snapshot] Top {len(top_jobs)}건 원문 저장 중...")
     job_snapshots = fetch_snapshots_batch(top_jobs, today=today, delay=1.2)
 

@@ -40,6 +40,7 @@ PROMPT_TEMPLATE = """\
 [모드 안내]
 {mode_context}
 
+{applied_block}\
 ---
 공고 리스트 (JSON):
 {jobs_json}
@@ -66,7 +67,12 @@ PROMPT_TEMPLATE = """\
 """
 
 
-def agent_rank(jobs: list, top_n: int = 10, mode: str = "today") -> tuple[list, list] | None:
+def agent_rank(
+    jobs: list,
+    top_n: int = 10,
+    mode: str = "today",
+    applied_companies: list | None = None,
+) -> tuple[list, list] | None:
     """
     Claude Code CLI로 이력서 기반 공고 랭킹.
     반환: (top_jobs, rest_jobs) 또는 None(실패 시 fallback 사용)
@@ -98,11 +104,24 @@ def agent_rank(jobs: list, top_n: int = 10, mode: str = "today") -> tuple[list, 
         })
 
     jobs_json = json.dumps(slim_jobs, ensure_ascii=False, indent=2)
+
+    if applied_companies:
+        names = "\n".join(f"  - {c}" for c in applied_companies)
+        applied_block = (
+            f"[지원 이력]\n"
+            f"아래 회사에는 이미 지원했어. 동일 회사 공고가 있으면 "
+            f"red_flags 에 '같은 회사에 이미 지원함' 을 추가해줘:\n"
+            f"{names}\n\n"
+        )
+    else:
+        applied_block = ""
+
     prompt = PROMPT_TEMPLATE.format(
         top_n=top_n,
         resume_path=resume_path,
         career_path=career_path,
         mode_context=_MODE_CONTEXT.get(mode, _MODE_CONTEXT["today"]),
+        applied_block=applied_block,
         jobs_json=jobs_json,
     )
 
