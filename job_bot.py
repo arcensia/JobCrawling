@@ -64,70 +64,66 @@ def load_config() -> dict:
 
 
 # ===== 원티드 =====
-def fetch_wanted(keyword: str, limit: int = 20) -> list:
-    """원티드 public search API 사용"""
-    results = []
-    try:
-        url = "https://www.wanted.co.kr/api/chaos/jobs/v4/jobs"
-        params = {
-            "1_10": "",
-            "country": "kr",
-            "job_sort": "job.latest_order",
-            "locations": "seoul.all,gyeonggi.all,incheon.all",
-            "years": "1-3",
-            "limit": str(limit),
-            "offset": "0",
-            "query": keyword,
-        }
-        r = requests.get(url, params=params, headers=HEADERS, timeout=15)
-        if r.status_code != 200:
-            # fallback: search page HTML
-            return fetch_wanted_html(keyword, limit)
-        data = r.json()
-        for item in (data.get("data") or [])[:limit]:
-            pos = item.get("position") or item.get("title") or ""
-            company = (item.get("company") or {}).get("name", "")
-            loc = (item.get("address") or {}).get("location", "")
-            pid = item.get("id") or item.get("job_id")
-            link = f"https://www.wanted.co.kr/wd/{pid}" if pid else ""
-            results.append({
-                "site": "원티드",
-                "title": pos,
-                "company": company,
-                "location": loc,
-                "experience": "1~3년",
-                "url": link,
-                "tags": ", ".join([t for t in (item.get("tag_names") or [])]),
-            })
-    except Exception as e:
-        print(f"[wanted] {keyword} 오류: {e}")
-    return results
+WANTED_DEV_PARENT_ID = 518   # 개발 직군 parent_id
+WANTED_LOC = {"서울", "경기", "인천"}
 
-
-def fetch_wanted_html(keyword: str, limit: int) -> list:
-    """원티드 검색 페이지 HTML 파싱 (fallback)"""
+def fetch_wanted(keyword: str = "", limit: int = 50) -> list:
+    """
+    navigation API로 전체 공고 수집 후 클라이언트 필터링.
+    - 개발 직군 (parent_id=518)
+    - 경력 1~3년 (annual_from <= 3)
+    - 서울/경기/인천 또는 원격
+    keyword 파라미터는 호환성 유지용 (실제 필터링은 title 기반)
+    """
     results = []
+    url = "https://www.wanted.co.kr/api/chaos/navigation/v1/results"
+    HEADERS_W = {**HEADERS, "Referer": "https://www.wanted.co.kr/"}
     try:
-        url = f"https://www.wanted.co.kr/search?query={quote(keyword)}&tab=position"
-        r = requests.get(url, headers=HEADERS, timeout=15)
-        soup = BeautifulSoup(r.text, "html.parser")
-        for a in soup.select("a[href^='/wd/']")[:limit]:
-            href = a.get("href", "")
-            title = a.get_text(" ", strip=True)[:100]
-            if not title or not href:
+        raw = []
+        for offset in range(0, 301, 100):
+            params = {
+                "country": "kr",
+                "job_sort": "job.latest_order",
+                "years": "-1",
+                "locations": "all",
+                "limit": "100",
+                "offset": str(offset),
+            }
+            r = requests.get(url, params=params, headers=HEADERS_W, timeout=15)
+            if r.status_code != 200:
+                break
+            data = r.json().get("data", [])
+            if not data:
+                break
+            raw.extend(data)
+            time.sleep(0.5)
+
+        for item in raw:
+            cat = item.get("category_tag") or {}
+            if cat.get("parent_id") != WANTED_DEV_PARENT_ID:
                 continue
+            if item.get("annual_from", 99) > 3:
+                continue
+            addr = item.get("address") or {}
+            loc = addr.get("location", "")
+            if loc and not any(l in loc for l in WANTED_LOC):
+                continue
+            pid = item.get("id")
+            raw_tags = item.get("skill_tags") or []
+            skills = [t.get("title", "") for t in raw_tags if isinstance(t, dict) and t.get("title")]
             results.append({
                 "site": "원티드",
-                "title": title,
-                "company": "",
-                "location": "",
-                "experience": "",
-                "url": "https://www.wanted.co.kr" + href,
-                "tags": keyword,
+                "title": item.get("position", ""),
+                "company": (item.get("company") or {}).get("name", ""),
+                "location": loc,
+                "experience": f"{item.get('annual_from', 0)}~{item.get('annual_to', '?')}년",
+                "url": f"https://www.wanted.co.kr/wd/{pid}" if pid else "",
+                "tags": ", ".join(skills),
             })
+        print(f"[wanted] {len(results)}건 수집")
     except Exception as e:
-        print(f"[wanted_html] {keyword} 오류: {e}")
-    return results
+        print(f"[wanted] 오류: {e}")
+    return results[:limit]
 
 
 # ===== 사람인 =====
@@ -242,10 +238,12 @@ def collect_all(cfg: dict) -> list:
     keywords = cfg.get("keywords", [])
     limit = int(cfg.get("max_per_site", 20))
 
+    # 원티드: 키워드 무관하게 1회만 전체 수집 후 클라이언트 필터링
+    if cfg["sites"].get("wanted"):
+        all_jobs.extend(fetch_wanted(limit=50))
+        time.sleep(0.8)
+
     for kw in keywords:
-        if cfg["sites"].get("wanted"):
-            all_jobs.extend(fetch_wanted(kw, limit=limit))
-            time.sleep(0.8)
         if cfg["sites"].get("saramin"):
             all_jobs.extend(fetch_saramin(kw, limit=limit))
             time.sleep(0.8)

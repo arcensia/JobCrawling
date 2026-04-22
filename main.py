@@ -57,13 +57,53 @@ def rank_jobs_simple(jobs: list, top_n: int) -> tuple[list, list]:
     """
     PRIORITY_KEYWORDS = [
         "fastapi", "python", "kafka", "mongodb", "비동기",
-        "백엔드", "서버", "api", "docker", "k8s", "kubernetes",
+        "백엔드", "docker", "k8s", "kubernetes",
+        "java", "kotlin", "spring", "node.js", "go", "golang",
+        "redis", "postgresql", "mysql", "aws", "gcp",
     ]
-    def score(job: dict) -> int:
-        text = " ".join([
-            job.get("title", ""), job.get("tags", ""), job.get("company", "")
-        ]).lower()
-        return sum(1 for kw in PRIORITY_KEYWORDS if kw in text)
+
+    def exp_score(job: dict) -> int:
+        """
+        경력 우선순위 점수
+        1순위 (30): 1~3년차 명시
+        2순위 (20): 신입 / 신입가능
+        3순위 (10): 3년차 이상(3~N년)
+        기타  ( 0): 판단 불가
+        """
+        exp = job.get("experience", "")
+        loc = job.get("location", "")
+        title = job.get("title", "")
+        full = f"{exp} {loc} {title}".lower()
+
+        # 텍스트 기반 우선 (사람인 location 필드 패턴)
+        if "신입" in full:
+            return 20
+        if "경력3년" in full or "3년↑" in full:
+            return 10
+        if any(f"{y}년↑" in full or f"경력{y}년" in full for y in ["1", "2"]):
+            return 30
+
+        # 원티드: experience 필드 "annual_from~annual_to년" 형식
+        try:
+            parts = exp.replace("년", "").split("~")
+            ann_from = int(parts[0])
+            ann_to = int(parts[1]) if len(parts) > 1 else 99
+            if 1 <= ann_from <= 3 and ann_to <= 3:
+                return 30
+            if ann_from == 0:
+                return 20
+            if ann_from >= 3:
+                return 10
+        except (ValueError, IndexError):
+            pass
+
+        return 30  # 사람인 exp_cd=1,2,3 결과는 기본 1~3년으로 간주
+
+    def score(job: dict) -> tuple:
+        # title만 사용 — tags는 사람인 직종 카테고리 레이블이 섞여 있어 신뢰도 낮음
+        text = job.get("title", "").lower()
+        kw_score = sum(1 for kw in PRIORITY_KEYWORDS if kw in text)
+        return (exp_score(job), kw_score)
 
     ranked = sorted(jobs, key=score, reverse=True)
     return ranked[:top_n], ranked[top_n:]
