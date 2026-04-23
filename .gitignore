@@ -5,6 +5,8 @@ resume/
 # 생성 데이터 (로컬 전용)
 data/
 reports/
+logs/
+status.json
 
 # 파이썬
 venv/
