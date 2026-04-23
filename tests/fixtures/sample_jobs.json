@@ -1,0 +1,47 @@
+[
+  {
+    "site": "원티드",
+    "company": "테스트컴퍼니",
+    "title": "Python 백엔드 개발자",
+    "experience": "1~3년",
+    "location": "서울",
+    "url": "https://www.wanted.co.kr/wd/100001",
+    "tags": "Python, FastAPI, Docker"
+  },
+  {
+    "site": "사람인",
+    "company": "샘플소프트",
+    "title": "FastAPI 서버 개발자",
+    "experience": "1~3년",
+    "location": "서울 / 정규직 / 경력 1~3년",
+    "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=10001",
+    "tags": "백엔드/서버개발"
+  },
+  {
+    "site": "원티드",
+    "company": "클라우드스타트업",
+    "title": "Backend Engineer (Java/Kotlin)",
+    "experience": "0~3년",
+    "location": "서울",
+    "url": "https://www.wanted.co.kr/wd/100003",
+    "tags": "Java, Kotlin, Spring"
+  },
+  {
+    "site": "사람인",
+    "company": "핀테크랩",
+    "title": "Spring Boot 백엔드 개발",
+    "experience": "1~3년",
+    "location": "경기 / 정규직",
+    "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=10004",
+    "tags": "백엔드/서버개발"
+  },
+  {
+    "site": "원티드",
+    "company": "시니어랩",
+    "title": "Sr. Backend Engineer",
+    "experience": "5~10년",
+    "location": "서울",
+    "url": "https://www.wanted.co.kr/wd/100005",
+    "tags": "Python, Kafka, Kubernetes"
+  }
+]

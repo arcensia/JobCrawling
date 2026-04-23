@@ -1,0 +1,32 @@
+[
+  {
+    "job_id": "aaa11111",
+    "company": "테스트컴퍼니",
+    "title": "Python 백엔드 개발자",
+    "url": "https://www.wanted.co.kr/wd/100001",
+    "site": "원티드",
+    "status": "applied",
+    "reacted_at": "2026-04-20",
+    "snapshot_path": null
+  },
+  {
+    "job_id": "bbb22222",
+    "company": "샘플소프트",
+    "title": "FastAPI 서버 개발자",
+    "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=10001",
+    "site": "사람인",
+    "status": "interested",
+    "reacted_at": "2026-04-20",
+    "snapshot_path": null
+  },
+  {
+    "job_id": "ccc33333",
+    "company": "클라우드스타트업",
+    "title": "Backend Engineer (Java/Kotlin)",
+    "url": "https://www.wanted.co.kr/wd/100003",
+    "site": "원티드",
+    "status": "rejected",
+    "reacted_at": "2026-04-21",
+    "snapshot_path": null
+  }
+]

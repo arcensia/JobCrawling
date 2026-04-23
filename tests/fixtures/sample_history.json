@@ -1,0 +1,42 @@
+{
+  "2026-04-20": [
+    {
+      "job_id": "aaa11111",
+      "message_id": "1111111111111111111",
+      "site": "원티드",
+      "company": "테스트컴퍼니",
+      "title": "Python 백엔드 개발자",
+      "url": "https://www.wanted.co.kr/wd/100001",
+      "snapshot_path": null
+    },
+    {
+      "job_id": "bbb22222",
+      "message_id": "2222222222222222222",
+      "site": "사람인",
+      "company": "샘플소프트",
+      "title": "FastAPI 서버 개발자",
+      "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=10001",
+      "snapshot_path": null
+    }
+  ],
+  "2026-04-21": [
+    {
+      "job_id": "ccc33333",
+      "message_id": "3333333333333333333",
+      "site": "원티드",
+      "company": "클라우드스타트업",
+      "title": "Backend Engineer (Java/Kotlin)",
+      "url": "https://www.wanted.co.kr/wd/100003",
+      "snapshot_path": null
+    },
+    {
+      "job_id": "ddd44444",
+      "message_id": "4444444444444444444",
+      "site": "사람인",
+      "company": "핀테크랩",
+      "title": "Spring Boot 백엔드 개발",
+      "url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=10004",
+      "snapshot_path": null
+    }
+  ]
+}
