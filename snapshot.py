@@ -5,8 +5,9 @@
 """
 
 import hashlib
+import shutil
 import time
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import requests
@@ -113,3 +114,23 @@ def fetch_snapshots_batch(jobs: list, today: str | None = None, delay: float = 1
 
 def job_id(job: dict) -> str:
     return _job_id(job)
+
+
+def cleanup_old_snapshots(retain_days: int = 30) -> int:
+    """retain_days 이전 스냅샷 디렉토리 삭제. 삭제된 디렉토리 수 반환."""
+    if not SNAPSHOTS_DIR.exists():
+        return 0
+    cutoff = date.today() - timedelta(days=retain_days)
+    removed = 0
+    for day_dir in SNAPSHOTS_DIR.iterdir():
+        if not day_dir.is_dir():
+            continue
+        try:
+            dir_date = date.fromisoformat(day_dir.name)
+        except ValueError:
+            continue
+        if dir_date < cutoff:
+            shutil.rmtree(day_dir)
+            print(f"[snapshot] 오래된 스냅샷 삭제: {day_dir.name}")
+            removed += 1
+    return removed

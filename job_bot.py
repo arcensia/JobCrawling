@@ -5,7 +5,6 @@
 발송/스냅샷은 main.py 에서 담당
 """
 
-import os
 import json
 import time
 from pathlib import Path
@@ -52,15 +51,32 @@ HEADERS = {
 
 def load_config() -> dict:
     if not CONFIG_PATH.exists():
-        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-            json.dump(DEFAULT_CONFIG, f, ensure_ascii=False, indent=2)
-        return DEFAULT_CONFIG
+        example = CONFIG_PATH.parent / "config.example.json"
+        hint = f" config.example.json을 복사해서 설정하세요: cp {example} {CONFIG_PATH}" if example.exists() else ""
+        raise FileNotFoundError(f"config.json이 없습니다.{hint}")
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         cfg = json.load(f)
-    # 누락 키 보충
+    # 누락 키 기본값으로 보충
     for k, v in DEFAULT_CONFIG.items():
         cfg.setdefault(k, v)
+    _validate_config(cfg)
     return cfg
+
+
+def _validate_config(cfg: dict):
+    """필수 항목 누락/타입 오류를 시작 시점에 바로 감지."""
+    if not isinstance(cfg.get("keywords"), list) or not cfg["keywords"]:
+        raise ValueError("config.json: 'keywords' 는 비어 있지 않은 리스트여야 합니다.")
+    if not isinstance(cfg.get("sites"), dict):
+        raise ValueError("config.json: 'sites' 는 dict 여야 합니다.")
+    discord = cfg.get("discord", {})
+    if not isinstance(discord, dict):
+        raise ValueError("config.json: 'discord' 는 dict 여야 합니다.")
+    top_n = discord.get("top_n", 10)
+    try:
+        int(top_n)
+    except (TypeError, ValueError):
+        raise ValueError(f"config.json: 'discord.top_n' 는 정수여야 합니다. (현재: {top_n!r})")
 
 
 # ===== 원티드 =====
@@ -295,13 +311,8 @@ a {{ color:#1a73e8; text-decoration:none; }}
 
 
 def to_xlsx(jobs: list, path: Path):
-    try:
-        import openpyxl
-        from openpyxl.styles import Font, PatternFill, Alignment
-    except ImportError:
-        os.system("pip install openpyxl --break-system-packages -q")
-        import openpyxl
-        from openpyxl.styles import Font, PatternFill, Alignment
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
 
     wb = openpyxl.Workbook()
     ws = wb.active
