@@ -15,6 +15,8 @@ Discord 리액션 폴링 → applied.json + jobs_pool.json 동기화
 """
 
 import json
+import os
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -51,7 +53,15 @@ def _load_applied() -> list:
 
 
 def _save_applied(data: list):
-    APPLIED_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    text = json.dumps(data, ensure_ascii=False, indent=2)
+    APPLIED_PATH.parent.mkdir(exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8",
+        dir=APPLIED_PATH.parent, suffix=".tmp", delete=False,
+    ) as f:
+        f.write(text)
+        tmp = f.name
+    os.replace(tmp, APPLIED_PATH)
 
 
 def _get_message(token: str, channel_id: str, message_id: str) -> dict | None:

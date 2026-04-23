@@ -21,6 +21,8 @@ Pool entry 구조:
 """
 
 import json
+import os
+import tempfile
 import datetime
 from pathlib import Path
 
@@ -32,6 +34,17 @@ CLOSED_PATH = DATA_DIR / "closed_jobs.json"
 MISS_THRESHOLD = 2
 
 
+def _atomic_write(path: Path, data: str):
+    path.parent.mkdir(exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8",
+        dir=path.parent, suffix=".tmp", delete=False,
+    ) as f:
+        f.write(data)
+        tmp = f.name
+    os.replace(tmp, path)
+
+
 def load_pool() -> dict:
     if POOL_PATH.exists():
         return json.loads(POOL_PATH.read_text(encoding="utf-8"))
@@ -39,8 +52,7 @@ def load_pool() -> dict:
 
 
 def save_pool(pool: dict):
-    DATA_DIR.mkdir(exist_ok=True)
-    POOL_PATH.write_text(json.dumps(pool, ensure_ascii=False, indent=2), encoding="utf-8")
+    _atomic_write(POOL_PATH, json.dumps(pool, ensure_ascii=False, indent=2))
 
 
 def load_closed() -> dict:
@@ -50,8 +62,7 @@ def load_closed() -> dict:
 
 
 def save_closed(closed: dict):
-    DATA_DIR.mkdir(exist_ok=True)
-    CLOSED_PATH.write_text(json.dumps(closed, ensure_ascii=False, indent=2), encoding="utf-8")
+    _atomic_write(CLOSED_PATH, json.dumps(closed, ensure_ascii=False, indent=2))
 
 
 def update_pool(pool: dict, fresh_jobs: list, today: str) -> dict:

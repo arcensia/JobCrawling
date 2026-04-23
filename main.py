@@ -21,11 +21,13 @@
 
 import argparse
 import datetime
-import traceback
+import logging
 from pathlib import Path
 
+log = logging.getLogger(__name__)
+
 from job_bot import load_config, collect_all, to_xlsx, to_html, REPORTS_DIR
-from snapshot import fetch_snapshots_batch
+from snapshot import fetch_snapshots_batch, cleanup_old_snapshots
 from discord_notifier import send_header, send_top_jobs, send_rest_jobs, save_records
 from agent_rank import agent_rank
 from job_pool import (
@@ -96,68 +98,74 @@ def main(mode: str = "today", no_rank: bool = False):
     top_n = int(dc.get("top_n", 10))
     today = datetime.date.today().isoformat()
 
-    print(f"=== 채용공고 수집 시작 ({today}) [mode={mode}] ===")
+    log.info("=== 채용공고 수집 시작 (%s) [mode=%s] ===", today, mode)
+
+    # 0. 오래된 스냅샷 정리 (30일 이전)
+    cleanup_old_snapshots(retain_days=30)
 
     # 1. 리액션 자동 동기화 (봇 꺼져 있어도 놓치지 않음)
     try:
         from reaction_sync import sync_once
         sync_once()
-    except Exception as e:
-        print(f"[sync] 자동 동기화 실패 (계속 진행): {e}")
+    except Exception:
+        log.exception("[sync] 자동 동기화 실패 (계속 진행)")
 
     # 2. 크롤링
     all_jobs = collect_all(cfg)
-    print(f"[crawl] {len(all_jobs)}건 수집")
+    log.info("[crawl] %d건 수집", len(all_jobs))
 
-    # 2. pool 갱신
+    # 3. pool 갱신
     pool = load_pool()
     pool = update_pool(pool, all_jobs, today)
-
     pool = flush_closed(pool)
 
     summary = pool_summary(pool)
-    print(f"[pool] open={summary['open']} / 지원={summary['applied']} / 관심={summary['interested']} / 전체={len(pool)}")
+    log.info("[pool] open=%d / 지원=%d / 관심=%d / 전체=%d",
+             summary["open"], summary.get("applied", 0),
+             summary.get("interested", 0), len(pool))
     save_pool(pool)
+
+    if summary["open"] == 0:
+        log.warning("[pool] open 공고 0건 — 크롤러 이상 여부 확인 필요")
 
     applied = load_applied()
 
-    # 3. 리포트 저장 (전체 open 공고 기준)
+    # 4. 리포트 저장 (전체 open 공고 기준)
     open_jobs = [e["job"] for e in pool.values() if e["status"] == "open"]
     xlsx_path = REPORTS_DIR / f"jobs_{today}.xlsx"
     to_xlsx(open_jobs, xlsx_path)
     html = to_html(open_jobs, today)
     (REPORTS_DIR / f"jobs_{today}.html").write_text(html, encoding="utf-8")
-    print(f"[report] 저장 완료: {xlsx_path.name}")
+    log.info("[report] 저장 완료: %s", xlsx_path.name)
 
-    # 4. 모드별 후보 선정
+    # 5. 모드별 후보 선정
     candidates = get_candidates(pool, mode=mode, today=today)
     if not candidates:
-        print(f"[rank] 후보 없음 (mode={mode}) — 발송 생략")
+        log.info("[rank] 후보 없음 (mode=%s) — 발송 생략", mode)
         return
-    print(f"[candidates] {len(candidates)}건 ({mode} 모드)")
+    log.info("[candidates] %d건 (%s 모드)", len(candidates), mode)
 
-    # 5. 랭킹
+    # 6. 랭킹
     applied_companies = list({a["company"] for a in applied if a.get("status") == "applied"})
     if not no_rank:
         agent_result = agent_rank(candidates, top_n, mode=mode, applied_companies=applied_companies)
         if agent_result:
             top_jobs, rest_jobs = agent_result
-            print(f"[rank] 에이전트 Top {len(top_jobs)} / 나머지 {len(rest_jobs)}")
+            log.info("[rank] 에이전트 Top %d / 나머지 %d", len(top_jobs), len(rest_jobs))
         else:
             top_jobs, rest_jobs = rank_jobs_simple(candidates, top_n)
-            print(f"[rank] fallback Top {len(top_jobs)} / 나머지 {len(rest_jobs)}")
+            log.info("[rank] fallback Top %d / 나머지 %d", len(top_jobs), len(rest_jobs))
     else:
         top_jobs, rest_jobs = rank_jobs_simple(candidates, top_n)
-        print(f"[rank] --no-rank Top {len(top_jobs)} / 나머지 {len(rest_jobs)}")
+        log.info("[rank] --no-rank Top %d / 나머지 %d", len(top_jobs), len(rest_jobs))
 
-    # 6. Top N 스냅샷
-
-    print(f"[snapshot] Top {len(top_jobs)}건 원문 저장 중...")
+    # 7. Top N 스냅샷
+    log.info("[snapshot] Top %d건 원문 저장 중...", len(top_jobs))
     job_snapshots = fetch_snapshots_batch(top_jobs, today=today, delay=1.2)
 
-    # 7. Discord 발송
+    # 8. Discord 발송
     if not webhook_url:
-        print("[discord] webhook_url 미설정 — 발송 생략")
+        log.warning("[discord] webhook_url 미설정 — 발송 생략")
         return
 
     mode_label = "오늘 신규" if mode == "today" else "누적 전체"
@@ -172,13 +180,17 @@ def main(mode: str = "today", no_rank: bool = False):
         records = send_top_jobs(webhook_url, top_jobs, job_snapshots, today=today)
         send_rest_jobs(webhook_url, rest_jobs, today=today)
         save_records(records, today=today)
-        print(f"[discord] 발송 완료 — Top {len(top_jobs)}건 개별 + 나머지 {len(rest_jobs)}건 묶음")
-    except Exception as e:
-        print(f"[discord] 발송 실패: {e}")
-        traceback.print_exc()
+        log.info("[discord] 발송 완료 — Top %d건 개별 + 나머지 %d건 묶음", len(top_jobs), len(rest_jobs))
+    except Exception:
+        log.exception("[discord] 발송 실패")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--mode",
