@@ -24,12 +24,8 @@ import json
 import os
 import tempfile
 import datetime
-from pathlib import Path
 
-BASE_DIR = Path(__file__).parent
-DATA_DIR    = BASE_DIR / "data"
-POOL_PATH   = DATA_DIR / "jobs_pool.json"
-CLOSED_PATH = DATA_DIR / "closed_jobs.json"
+from core.path import POOL_PATH, CLOSED_PATH
 
 MISS_THRESHOLD = 2
 

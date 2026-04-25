@@ -8,7 +8,6 @@
 import json
 import re
 import time
-from pathlib import Path
 from urllib.parse import quote
 
 # 경력 4년 이상 필수 공고 차단 패턴 모음 ("3년 이상"은 통과, "4년~"부터 차단)
@@ -31,10 +30,8 @@ import requests
 from bs4 import BeautifulSoup
 
 # ===== 설정 =====
-BASE_DIR = Path(__file__).parent
-REPORTS_DIR = BASE_DIR / "reports"
-REPORTS_DIR.mkdir(exist_ok=True)
-CONFIG_PATH = BASE_DIR / "config.json"
+from core.path import REPORTS_DIR, CONFIG_PATH, ensure_dirs
+ensure_dirs()
 
 DEFAULT_CONFIG = {
     "keywords": ["백엔드", "서버", "풀스택", "Python", "Java", "Node.js", "Spring", "FastAPI"],

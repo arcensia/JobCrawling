@@ -22,11 +22,12 @@
 import argparse
 import datetime
 import logging
-from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-from job_bot import load_config, collect_all, to_xlsx, to_html, REPORTS_DIR
+from core.config import load_config
+from core.path import REPORTS_DIR, APPLIED_PATH
+from job_bot import collect_all, to_xlsx, to_html
 from snapshot import fetch_snapshots_batch, cleanup_old_snapshots
 from discord_notifier import send_header, send_top_jobs, send_rest_jobs, save_records
 from agent_rank import agent_rank
@@ -36,14 +37,10 @@ from job_pool import (
     get_candidates, pool_summary,
 )
 
-BASE_DIR = Path(__file__).parent
-
-
 def load_applied() -> list:
-    path = BASE_DIR / "data" / "applied.json"
-    if path.exists():
-        import json
-        return json.loads(path.read_text(encoding="utf-8"))
+    import json
+    if APPLIED_PATH.exists():
+        return json.loads(APPLIED_PATH.read_text(encoding="utf-8"))
     return []
 
 
@@ -93,9 +90,9 @@ def rank_jobs_simple(jobs: list, top_n: int) -> tuple[list, list]:
 
 def main(mode: str = "today", no_rank: bool = False):
     cfg = load_config()
-    dc  = cfg.get("discord", {})
-    webhook_url = dc.get("webhook_url", "")
-    top_n = int(dc.get("top_n", 10))
+    dc  = cfg.discord
+    webhook_url = dc.webhook_url
+    top_n = dc.top_n
     today = datetime.date.today().isoformat()
 
     log.info("=== 채용공고 수집 시작 (%s) [mode=%s] ===", today, mode)

@@ -10,12 +10,9 @@ Discord 웹훅 발송 + jobs_history.json 기록
 import json
 import time
 from datetime import date
-from pathlib import Path
-
 import requests
 
-BASE_DIR = Path(__file__).parent
-HISTORY_PATH = BASE_DIR / "data" / "jobs_history.json"
+from core.path import HISTORY_PATH
 
 SITE_COLORS = {
     "원티드":   0x258BF5,

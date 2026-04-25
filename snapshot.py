@@ -8,13 +8,10 @@ import hashlib
 import shutil
 import time
 from datetime import date, timedelta
-from pathlib import Path
-
 import requests
 from bs4 import BeautifulSoup
 
-BASE_DIR = Path(__file__).parent
-SNAPSHOTS_DIR = BASE_DIR / "data" / "snapshots"
+from core.path import SNAPSHOTS_DIR
 
 HEADERS = {
     "User-Agent": (

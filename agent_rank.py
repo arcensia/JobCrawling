@@ -12,10 +12,8 @@ Claude Code (claude -p) 를 이용한 이력서 기반 공고 랭킹
 
 import json
 import subprocess
-from pathlib import Path
 
-BASE_DIR = Path(__file__).parent
-RESUME_DIR = BASE_DIR / "resume"
+from core.path import PROJECT_ROOT as BASE_DIR, RESUME_DIR
 
 _MODE_CONTEXT = {
     "today": (

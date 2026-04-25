@@ -13,30 +13,18 @@ import argparse
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
-
 import requests
 
-BASE_DIR     = Path(__file__).parent
-APPLIED_PATH = BASE_DIR / "data" / "applied.json"
-POOL_PATH    = BASE_DIR / "data" / "jobs_pool.json"
-CONFIG_PATH  = BASE_DIR / "config.json"
+from core.config import load_config
+from core.load import load_applied, load_pool
+from core.path import APPLIED_PATH, POOL_PATH
+
 
 REACTION_LABEL = {
     "applied":    "✅ 지원",
     "interested": "🎯 관심",
     "rejected":   "❌ 패스",
 }
-
-
-def _load(path: Path, default):
-    if not path.exists():
-        return default
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def _load_config() -> dict:
-    return _load(CONFIG_PATH, {})
-
 
 def _group_applied(applied: list) -> dict:
     """reaction 별로 applied 리스트 분류."""
@@ -70,8 +58,8 @@ def _unreviewed_count(pool: dict) -> int:
 
 
 def build_summary(detail: bool = False) -> str:
-    applied = _load(APPLIED_PATH, [])
-    pool    = _load(POOL_PATH, {})
+    applied = load_applied()
+    pool    = load_pool()
     today   = datetime.now().strftime("%Y-%m-%d")
 
     groups      = _group_applied(applied)
@@ -103,8 +91,8 @@ def build_summary(detail: bool = False) -> str:
 
 
 def send_to_discord(webhook_url: str):
-    applied = _load(APPLIED_PATH, [])
-    pool    = _load(POOL_PATH, {})
+    applied = load_applied()
+    pool    = load_pool()
     today   = datetime.now().strftime("%Y-%m-%d")
 
     groups      = _group_applied(applied)
@@ -174,11 +162,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.send:
-        cfg = _load_config()
-        webhook = cfg.get("discord", {}).get("webhook_url", "")
-        if not webhook:
-            print("[status] webhook_url 미설정")
-        else:
-            send_to_discord(webhook)
+        cfg = load_config()
+        webhook = cfg.discord.webhook_url
+        send_to_discord(webhook)
     else:
         print(build_summary(detail=args.detail))

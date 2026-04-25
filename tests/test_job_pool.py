@@ -154,7 +154,6 @@ class TestFlushClosed:
     def test_closed_항목_이동(self, sample_jobs, tmp_path, monkeypatch):
         import job_pool
         monkeypatch.setattr(job_pool, "CLOSED_PATH", tmp_path / "closed_jobs.json")
-        monkeypatch.setattr(job_pool, "DATA_DIR", tmp_path)
 
         pool = update_pool({}, sample_jobs, "2026-04-20")
         pool = update_pool(pool, sample_jobs[1:], "2026-04-21")
@@ -170,7 +169,6 @@ class TestFlushClosed:
     def test_open_항목은_유지(self, sample_jobs, tmp_path, monkeypatch):
         import job_pool
         monkeypatch.setattr(job_pool, "CLOSED_PATH", tmp_path / "closed_jobs.json")
-        monkeypatch.setattr(job_pool, "DATA_DIR", tmp_path)
 
         pool = update_pool({}, sample_jobs, "2026-04-20")
         pool = flush_closed(pool)  # closed 없음
@@ -207,7 +205,6 @@ class TestPersistence:
     def test_save_load_왕복(self, base_pool, tmp_path, monkeypatch):
         import job_pool
         monkeypatch.setattr(job_pool, "POOL_PATH", tmp_path / "jobs_pool.json")
-        monkeypatch.setattr(job_pool, "DATA_DIR", tmp_path)
 
         save_pool(base_pool)
         loaded = load_pool()
