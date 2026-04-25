@@ -11,8 +11,21 @@ import time
 from pathlib import Path
 from urllib.parse import quote
 
-# 경력 4년 이상 필수 공고 차단 패턴 ("3년 이상"은 통과, "4년 이상"부터 차단)
-_HIGH_CAREER_RE = re.compile(r"(?:경력\s*)?([4-9]|1\d)\s*년\s*(?:이상|\+|↑|~)")
+# 경력 4년 이상 필수 공고 차단 패턴 모음 ("3년 이상"은 통과, "4년~"부터 차단)
+_HIGH_CAREER_PATTERNS = [
+    # "4년 이상", "4년+", "4년↑", "4년~", "4년차 이상"
+    re.compile(r"([4-9]|1\d)\s*년\s*(?:차\s*)?(?:이상|\+|↑|~)"),
+    # 범위 표기: "4~10년", "5-10년", "경력 5~7년"
+    re.compile(r"([4-9]|1\d)\s*[~\-]\s*\d+\s*년"),
+    # "4년차" 단독 (e.g., "4년차 백엔드"). "4년차 이하/미만"은 제외
+    re.compile(r"([4-9]|1\d)\s*년\s*차(?!\s*(?:이하|미만))"),
+    # "경력 4년" 평문 (이하/미만 제외)
+    re.compile(r"경력\s*([4-9]|1\d)\s*년(?!\s*(?:이하|미만|\d))"),
+]
+
+
+def _has_high_career(text: str) -> bool:
+    return any(p.search(text) for p in _HIGH_CAREER_PATTERNS)
 
 import requests
 from bs4 import BeautifulSoup
@@ -229,8 +242,14 @@ def matches_filter(job: dict, cfg: dict) -> bool:
     for ex in cfg.get("exclude_keywords", []):
         if ex.lower() in text:
             return False
-    # 경력 4년 이상 필수 공고 제외 (제목 기준)
-    if _HIGH_CAREER_RE.search(job.get("title", "")):
+    # 경력 4년 이상 필수 공고 제외 (사람인은 location 조건 영역에 경력 표기됨)
+    career_text = " ".join([
+        job.get("title", ""),
+        job.get("location", ""),
+        job.get("tags", ""),
+        job.get("experience", ""),
+    ])
+    if _has_high_career(career_text):
         return False
     # 지역 필터 (location 정보가 있을 때만)
     loc = job.get("location", "")
