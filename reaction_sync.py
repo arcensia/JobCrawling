@@ -19,14 +19,10 @@ import os
 import tempfile
 import time
 from datetime import datetime, timezone
-from pathlib import Path
 
 import requests
 
-BASE_DIR     = Path(__file__).parent
-HISTORY_PATH = BASE_DIR / "data" / "jobs_history.json"
-APPLIED_PATH = BASE_DIR / "data" / "applied.json"
-CONFIG_PATH  = BASE_DIR / "config.json"
+from core.path import HISTORY_PATH, APPLIED_PATH, CONFIG_PATH
 
 REACTION_MAP = {
     "✅": "applied",

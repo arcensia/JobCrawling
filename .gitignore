@@ -17,3 +17,6 @@ __pycache__/
 # IDE
 .idea/
 .vscode/
+
+# Claude Code 작업공간
+.claude/worktrees/

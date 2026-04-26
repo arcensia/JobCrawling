@@ -77,7 +77,6 @@ class TestSyncOnce:
         monkeypatch.setattr(reaction_sync, "HISTORY_PATH", hist_path)
         monkeypatch.setattr(reaction_sync, "APPLIED_PATH", applied_path)
         monkeypatch.setattr(job_pool,      "POOL_PATH",    pool_path)
-        monkeypatch.setattr(job_pool,      "DATA_DIR",     tmp_path)
 
         return applied_path, pool_path
 

@@ -18,14 +18,9 @@ import re
 import time
 from collections import Counter
 from datetime import date, timedelta
-from pathlib import Path
-
 import requests
 
-BASE_DIR = Path(__file__).parent
-SNAPSHOTS_DIR = BASE_DIR / "data" / "snapshots"
-RESUME_DIR = BASE_DIR / "resume"
-CONFIG_PATH = BASE_DIR / "config.json"
+from core.path import SNAPSHOTS_DIR, RESUME_DIR, CONFIG_PATH
 
 # 분석 대상 기술 키워드 목록
 TECH_KEYWORDS = [
