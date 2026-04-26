@@ -10,14 +10,11 @@
 """
 
 import argparse
-import json
 from datetime import datetime, timedelta
-from pathlib import Path
 import requests
 
 from core.config import load_config
 from core.load import load_applied, load_pool
-from core.path import APPLIED_PATH, POOL_PATH
 
 
 REACTION_LABEL = {

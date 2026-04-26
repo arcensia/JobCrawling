@@ -8,7 +8,10 @@
 import json
 import re
 import time
+from pathlib import Path
 from urllib.parse import quote
+
+from core.config import load_config, AppConfig
 
 # 경력 4년 이상 필수 공고 차단 패턴 모음 ("3년 이상"은 통과, "4년~"부터 차단)
 _HIGH_CAREER_PATTERNS = [
@@ -30,29 +33,8 @@ import requests
 from bs4 import BeautifulSoup
 
 # ===== 설정 =====
-from core.path import REPORTS_DIR, CONFIG_PATH, ensure_dirs
+from core.path import REPORTS_DIR, ensure_dirs
 ensure_dirs()
-
-DEFAULT_CONFIG = {
-    "keywords": ["백엔드", "서버", "풀스택", "Python", "Java", "Node.js", "Spring", "FastAPI"],
-    "exclude_keywords": ["PHP 전문", "경력 5년 이상 필수", "시니어"],
-    "years_min": 1,
-    "years_max": 3,
-    "include_newbie": True,
-    "locations": ["서울", "경기", "인천", "수도권", "원격"],
-    "sites": {
-        "wanted": True,
-        "saramin": True,
-        "jobkorea": True
-    },
-    "max_per_site": 20,
-    "discord": {
-        "webhook_url": "",
-        "bot_token": "",
-        "channel_id": "",
-        "top_n": 10
-    }
-}
 
 HEADERS = {
     "User-Agent": (
@@ -61,37 +43,6 @@ HEADERS = {
     ),
     "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
 }
-
-
-def load_config() -> dict:
-    if not CONFIG_PATH.exists():
-        example = CONFIG_PATH.parent / "config.example.json"
-        hint = f" config.example.json을 복사해서 설정하세요: cp {example} {CONFIG_PATH}" if example.exists() else ""
-        raise FileNotFoundError(f"config.json이 없습니다.{hint}")
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        cfg = json.load(f)
-    # 누락 키 기본값으로 보충
-    for k, v in DEFAULT_CONFIG.items():
-        cfg.setdefault(k, v)
-    _validate_config(cfg)
-    return cfg
-
-
-def _validate_config(cfg: dict):
-    """필수 항목 누락/타입 오류를 시작 시점에 바로 감지."""
-    if not isinstance(cfg.get("keywords"), list) or not cfg["keywords"]:
-        raise ValueError("config.json: 'keywords' 는 비어 있지 않은 리스트여야 합니다.")
-    if not isinstance(cfg.get("sites"), dict):
-        raise ValueError("config.json: 'sites' 는 dict 여야 합니다.")
-    discord = cfg.get("discord", {})
-    if not isinstance(discord, dict):
-        raise ValueError("config.json: 'discord' 는 dict 여야 합니다.")
-    top_n = discord.get("top_n", 10)
-    try:
-        int(top_n)
-    except (TypeError, ValueError):
-        raise ValueError(f"config.json: 'discord.top_n' 는 정수여야 합니다. (현재: {top_n!r})")
-
 
 # ===== 원티드 =====
 WANTED_DEV_PARENT_ID = 518   # 개발 직군 parent_id
@@ -231,12 +182,12 @@ def fetch_jobkorea(keyword: str, limit: int = 20) -> list:
 
 
 # ===== 필터링 / 중복제거 =====
-def matches_filter(job: dict, cfg: dict) -> bool:
+def matches_filter(job: dict, cfg: AppConfig) -> bool:
     text = " ".join([
         job.get("title", ""), job.get("company", ""),
         job.get("location", ""), job.get("tags", ""),
     ]).lower()
-    for ex in cfg.get("exclude_keywords", []):
+    for ex in cfg.exclude_keywords:
         if ex.lower() in text:
             return False
     # 경력 4년 이상 필수 공고 제외 (사람인은 location 조건 영역에 경력 표기됨)
@@ -251,7 +202,7 @@ def matches_filter(job: dict, cfg: dict) -> bool:
     # 지역 필터 (location 정보가 있을 때만)
     loc = job.get("location", "")
     if loc:
-        loc_ok = any(l in loc for l in cfg.get("locations", []))
+        loc_ok = any(l in loc for l in cfg.locations)
         if not loc_ok:
             # 원격 가능/전국 등의 표기도 통과
             if not any(k in text for k in ["원격", "재택", "전국"]):
@@ -272,21 +223,21 @@ def dedupe(jobs: list) -> list:
 
 
 # ===== 수집 메인 =====
-def collect_all(cfg: dict) -> list:
+def collect_all(cfg: AppConfig) -> list:
     all_jobs = []
-    keywords = cfg.get("keywords", [])
-    limit = int(cfg.get("max_per_site", 20))
+    keywords = cfg.keywords
+    limit = int(cfg.max_per_site)
 
     # 원티드: 키워드 무관하게 1회만 전체 수집 후 클라이언트 필터링
-    if cfg["sites"].get("wanted"):
+    if cfg.sites.get("wanted"):
         all_jobs.extend(fetch_wanted(limit=50))
         time.sleep(0.8)
 
     for kw in keywords:
-        if cfg["sites"].get("saramin"):
+        if cfg.sites.get("saramin"):
             all_jobs.extend(fetch_saramin(kw, limit=limit))
             time.sleep(0.8)
-        if cfg["sites"].get("jobkorea"):
+        if cfg.sites.get("jobkorea"):
             all_jobs.extend(fetch_jobkorea(kw, limit=limit))
             time.sleep(0.8)
 
