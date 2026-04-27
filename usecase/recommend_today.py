@@ -7,7 +7,7 @@ from typing import Literal
 from usecase.ports import JobCrawler, JobRepository, SnapshotStore, Ranker, Notifier
 
 log = logging.getLogger(__name__)
-Mode = Literal["today", "cumulative"]
+Mode = Literal["today", "cumulative", "review"]
 
 
 class RecommendJobs:
@@ -53,11 +53,12 @@ class RecommendJobs:
 
         snapshots = self._snapshots.fetch_batch(top_jobs, today=today)
 
+        mode_label = {"today": "오늘 신규", "cumulative": "누적 전체", "review": "관심 공고 리뷰"}.get(mode, mode)
         self._notifier.notify_recommendations(
             top_jobs=top_jobs,
             rest_jobs=rest_jobs,
             snapshots=snapshots,
-            mode_label="오늘 신규" if mode == "today" else "누적 전체",
+            mode_label=mode_label,
         )
 
     def _refresh_pool(self, all_jobs: list[dict], today: str) -> dict:

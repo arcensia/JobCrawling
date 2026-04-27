@@ -132,6 +132,7 @@ def get_candidates(pool: dict, mode: str, today: str, max_days: int = 30) -> lis
 
     mode='today'      : 오늘 처음 등장한 공고만
     mode='cumulative' : 최근 max_days 일 내 열린 공고 전체
+    mode='review'     : 관심 표시(interested)한 공고 전체 (지원 결정용)
     """
     cutoff = (
         datetime.date.fromisoformat(today)
@@ -141,6 +142,10 @@ def get_candidates(pool: dict, mode: str, today: str, max_days: int = 30) -> lis
     result = []
     for entry in pool.values():
         if entry["status"] != "open":
+            continue
+        if mode == "review":
+            if entry.get("reaction") == "interested":
+                result.append(entry["job"])
             continue
         if entry.get("reaction"):       # 이미 반응한 공고 제외
             continue

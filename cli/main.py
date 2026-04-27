@@ -61,7 +61,7 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=["today", "cumulative"], default="today")
+    parser.add_argument("--mode", choices=["today", "cumulative", "review"], default="today")
     parser.add_argument("--no-rank", action="store_true")
     args = parser.parse_args()
     main(mode=args.mode, no_rank=args.no_rank)
