@@ -40,15 +40,15 @@ class DiscordWebhookNotifier:
         today = date.today().isoformat()
         total = len(top_jobs) + len(rest_jobs)
 
-        # Job dataclass → dict 변환 (기존 함수가 dict를 받으므로)
-        top_dicts = [j.to_dict() for j in top_jobs]
-        rest_dicts = [j.to_dict() for j in rest_jobs]
+        top_dicts = list(top_jobs)
+        rest_dicts = list(rest_jobs)
 
         self._send_header(self._webhook_url, total, self._top_n, today, mode_label)
         records = self._send_top_jobs(self._webhook_url, top_dicts, snapshots, today)
         _send_rest_jobs(self._webhook_url, rest_dicts, today)
         _save_records(records, today)
 
+    @staticmethod
     def _send_header(webhook_url: str, total: int, top_n: int, today: str, mode_label: str = "오늘 신규"):
         payload = {
             "embeds": [{
@@ -64,6 +64,7 @@ class DiscordWebhookNotifier:
         _post(webhook_url, payload)
         time.sleep(0.5)
 
+    @staticmethod
     def _send_top_jobs(
             webhook_url: str,
             jobs: list,

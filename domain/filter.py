@@ -1,39 +1,31 @@
+import re
+
 from domain.job import Job
 
 
-def is_within_year_range(job: Job, min: int = -1, max: int = -1) ->bool:
-    career_text = " ".join(
-        job.title,
-        job.location,
-        job.company,
-        job.tags
-    )
+_HIGH_CAREER_PATTERNS = [
+    re.compile(r"([4-9]|1\d)\s*년\s*(?:차\s*)?(?:이상|\+|↑|~)"),
+    re.compile(r"([4-9]|1\d)\s*[~\-]\s*\d+\s*년"),
+    re.compile(r"([4-9]|1\d)\s*년\s*차(?!\s*(?:이하|미만))"),
+    re.compile(r"경력\s*([4-9]|1\d)\s*년(?!\s*(?:이하|미만|\d))"),
+    # 상한이 7년 이상인 범위 표기 (예: "3~8년", "0~10년", "1~20년", "3~100년")
+    re.compile(r"\d\s*[~\-]\s*([7-9]|[1-9]\d+)\s*년"),
+]
 
-    HIGH_CAREER_PATTERNS = [
-        # "4년 이상", "4년+", "4년↑", "4년~", "4년차 이상"
-        re.compile(r"([4-9]|1\d)\s*년\s*(?:차\s*)?(?:이상|\+|↑|~)"),
-        # 범위 표기: "4~10년", "5-10년", "경력 5~7년"
-        re.compile(r"([4-9]|1\d)\s*[~\-]\s*\d+\s*년"),
-        # "4년차" 단독 (e.g., "4년차 백엔드"). "4년차 이하/미만"은 제외
-        re.compile(r"([4-9]|1\d)\s*년\s*차(?!\s*(?:이하|미만))"),
-        # "경력 4년" 평문 (이하/미만 제외)
-        re.compile(r"경력\s*([4-9]|1\d)\s*년(?!\s*(?:이하|미만|\d))"),
-    ]
 
-    return any(p.search(text) for p in HIGH_CAREER_PATTERNS)
+def is_high_career(job: Job) -> bool:
+    text = " ".join([job.title, job.location, job.company, job.tags, job.experience])
+    return any(p.search(text) for p in _HIGH_CAREER_PATTERNS)
 
-def has_excluded_keyword(job: Job, exclude_keywords: list[str]) ->bool:
-    career_text = " ".join(
-        job.title,
-        job.location,
-        job.tags,
-        job.experience
-    )
 
-    for ex in exclude_keywords:
-        if ex.lower() in career_text:
-            return False
+def has_excluded_keyword(job: Job, exclude_keywords: list[str]) -> bool:
+    text = " ".join([job.title, job.location, job.tags, job.experience]).lower()
+    return any(ex.lower() in text for ex in exclude_keywords)
+
+
+def is_candidate(job: Job, exclude_keywords: list[str] | None = None) -> bool:
+    if is_high_career(job):
+        return False
+    if exclude_keywords and has_excluded_keyword(job, exclude_keywords):
+        return False
     return True
-
-def is_candidate(job: Job) ->bool:
-    ...

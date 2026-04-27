@@ -111,7 +111,11 @@ def sync_once(dry_run: bool = False) -> int:
     updated = 0
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    for record in all_records:
+    # 같은 job_id가 여러 날 발송된 경우 가장 최근 record만 처리
+    # (history는 날짜순 삽입 → 마지막 덮어쓰기 = 최신 메시지)
+    latest_by_job = {r["job_id"]: r for r in all_records}
+
+    for record in latest_by_job.values():
         job_id     = record["job_id"]
         message_id = record.get("message_id")
         if not message_id:

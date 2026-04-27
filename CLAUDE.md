@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Clean Architecture (Ports & Adapters) 패턴으로 리팩토링되어 있습니다 — 자세한 구조는 [Architecture](#architecture) 참고.
 
+장기 비전·로드맵·검토 중인 확장 아이디어는 [docs/ROADMAP.md](docs/ROADMAP.md) 참고.
+
 ## Setup
 
 ```bash

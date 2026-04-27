@@ -19,6 +19,8 @@ _HIGH_CAREER_PATTERNS = [
     re.compile(r"([4-9]|1\d)\s*년\s*(?:차\s*)?(?:이상|\+|↑|~)"),
     # 범위 표기: "4~10년", "5-10년", "경력 5~7년"
     re.compile(r"([4-9]|1\d)\s*[~\-]\s*\d+\s*년"),
+    # 상한이 7년 이상인 범위 표기 (예: "3~8년", "0~10년", "1~20년", "3~100년")
+    re.compile(r"\d\s*[~\-]\s*([7-9]|[1-9]\d+)\s*년"),
     # "4년차" 단독 (e.g., "4년차 백엔드"). "4년차 이하/미만"은 제외
     re.compile(r"([4-9]|1\d)\s*년\s*차(?!\s*(?:이하|미만))"),
     # "경력 4년" 평문 (이하/미만 제외)
@@ -83,7 +85,11 @@ def fetch_wanted(keyword: str = "", limit: int = 50) -> list:
             cat = item.get("category_tag") or {}
             if cat.get("parent_id") != WANTED_DEV_PARENT_ID:
                 continue
-            if item.get("annual_from", 99) > 3:
+            annual_from = item.get("annual_from", 99)
+            annual_to = item.get("annual_to", 0)
+            if annual_from > 3:
+                continue
+            if annual_from >= 3 and annual_to > 5:  # "3~N년" 시니어 포함 범위 차단
                 continue
             addr = item.get("address") or {}
             loc = addr.get("location", "")
