@@ -2,7 +2,7 @@
 
 import json
 import pytest
-from job_pool import (
+from adapters.repository.json_pool import (
     update_pool, set_reaction, get_candidates,
     flush_closed, pool_summary,
     load_pool, save_pool, load_closed,
@@ -152,8 +152,8 @@ class TestGetCandidates:
 
 class TestFlushClosed:
     def test_closed_항목_이동(self, sample_jobs, tmp_path, monkeypatch):
-        import job_pool
-        monkeypatch.setattr(job_pool, "CLOSED_PATH", tmp_path / "closed_jobs.json")
+        import adapters.repository.json_pool as json_pool_mod
+        monkeypatch.setattr(json_pool_mod, "CLOSED_PATH", tmp_path / "closed_jobs.json")
 
         pool = update_pool({}, sample_jobs, "2026-04-20")
         pool = update_pool(pool, sample_jobs[1:], "2026-04-21")
@@ -167,8 +167,8 @@ class TestFlushClosed:
         assert len(closed) == 1
 
     def test_open_항목은_유지(self, sample_jobs, tmp_path, monkeypatch):
-        import job_pool
-        monkeypatch.setattr(job_pool, "CLOSED_PATH", tmp_path / "closed_jobs.json")
+        import adapters.repository.json_pool as json_pool_mod
+        monkeypatch.setattr(json_pool_mod, "CLOSED_PATH", tmp_path / "closed_jobs.json")
 
         pool = update_pool({}, sample_jobs, "2026-04-20")
         pool = flush_closed(pool)  # closed 없음
@@ -203,8 +203,8 @@ class TestPoolSummary:
 
 class TestPersistence:
     def test_save_load_왕복(self, base_pool, tmp_path, monkeypatch):
-        import job_pool
-        monkeypatch.setattr(job_pool, "POOL_PATH", tmp_path / "jobs_pool.json")
+        import adapters.repository.json_pool as json_pool_mod
+        monkeypatch.setattr(json_pool_mod, "POOL_PATH", tmp_path / "jobs_pool.json")
 
         save_pool(base_pool)
         loaded = load_pool()

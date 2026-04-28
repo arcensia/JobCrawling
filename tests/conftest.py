@@ -66,6 +66,6 @@ def tmp_history_path(tmp_path, sample_history) -> Path:
 @pytest.fixture
 def base_pool(sample_jobs) -> dict:
     """sample_jobs 를 2026-04-20 에 first_seen 된 pool 로 구성."""
-    from job_pool import update_pool
+    from adapters.repository.json_pool import update_pool
     pool = {}
     return update_pool(pool, sample_jobs, "2026-04-20")

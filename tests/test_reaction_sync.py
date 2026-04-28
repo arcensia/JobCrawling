@@ -61,7 +61,7 @@ class TestSyncOnce:
     def _setup_paths(self, tmp_path, sample_history, sample_applied, monkeypatch):
         """임시 경로를 reaction 어댑터 모듈에 주입."""
         from adapters.sync import reaction as reaction_mod
-        import job_pool
+        import adapters.repository.json_pool as json_pool_mod
 
         hist_path    = tmp_path / "jobs_history.json"
         applied_path = tmp_path / "applied.json"
@@ -75,9 +75,9 @@ class TestSyncOnce:
         )
         pool_path.write_text(json.dumps({}), encoding="utf-8")
 
-        monkeypatch.setattr(reaction_mod, "HISTORY_PATH", hist_path)
-        monkeypatch.setattr(reaction_mod, "APPLIED_PATH", applied_path)
-        monkeypatch.setattr(job_pool,     "POOL_PATH",    pool_path)
+        monkeypatch.setattr(reaction_mod,  "HISTORY_PATH", hist_path)
+        monkeypatch.setattr(reaction_mod,  "APPLIED_PATH", applied_path)
+        monkeypatch.setattr(json_pool_mod, "POOL_PATH",    pool_path)
 
         return applied_path, pool_path
 

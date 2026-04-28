@@ -77,7 +77,7 @@ def sync_once(dry_run: bool = False) -> int:
     리액션 제거도 감지해 null로 복원.
     반환: 변경된 건수
     """
-    from job_pool import load_pool, save_pool, set_reaction
+    from adapters.repository.json_pool import load_pool, save_pool, set_reaction
 
     cfg = _load_config()
     dc = cfg.get("discord", {})

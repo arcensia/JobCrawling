@@ -81,7 +81,7 @@ class TestThisWeekCounts:
 class TestUnreviewedCount:
     def test_reaction_없는_open만_카운트(self, base_pool):
         from status import _unreviewed_count
-        from job_pool import set_reaction
+        from adapters.repository.json_pool import set_reaction
 
         total_open = len(base_pool)
         jid = list(base_pool.keys())[0]
@@ -100,7 +100,7 @@ class TestUnreviewedCount:
 
     def test_전부_리뷰됨(self, base_pool):
         from status import _unreviewed_count
-        from job_pool import set_reaction
+        from adapters.repository.json_pool import set_reaction
 
         for jid in base_pool:
             set_reaction(base_pool, jid, "rejected", "2026-04-21")
@@ -113,7 +113,6 @@ class TestUnreviewedCount:
 class TestBuildSummary:
     def _patch_paths(self, mocker, tmp_path, applied, pool):
         import status as s_mod
-        import job_pool as jp_mod
 
         applied_path = tmp_path / "applied.json"
         pool_path    = tmp_path / "jobs_pool.json"
