@@ -49,14 +49,14 @@ class TestPromptBuilding:
             ])
             return result
 
-        mocker.patch("agent_rank.subprocess.run", side_effect=fake_run)
+        mocker.patch("adapters.ranker.agent_with_fallback.subprocess.run", side_effect=fake_run)
 
         # 이력서 파일 임시 생성
         resume_dir = tmp_path / "resume"
         resume_dir.mkdir()
         (resume_dir / "이력서.txt").write_text("이력서 내용", encoding="utf-8")
 
-        import agent_rank
+        from adapters.ranker import agent_with_fallback as agent_rank
         mocker.patch.object(agent_rank, "RESUME_DIR", resume_dir)
 
         agent_rank.agent_rank(
@@ -81,13 +81,13 @@ class TestPromptBuilding:
             ])
             return result
 
-        mocker.patch("agent_rank.subprocess.run", side_effect=fake_run)
+        mocker.patch("adapters.ranker.agent_with_fallback.subprocess.run", side_effect=fake_run)
 
         resume_dir = tmp_path / "resume"
         resume_dir.mkdir()
         (resume_dir / "이력서.txt").write_text("이력서", encoding="utf-8")
 
-        import agent_rank
+        from adapters.ranker import agent_with_fallback as agent_rank
         mocker.patch.object(agent_rank, "RESUME_DIR", resume_dir)
 
         agent_rank.agent_rank(sample_jobs[:1], top_n=1, applied_companies=[])
@@ -102,13 +102,13 @@ class TestJsonParsing:
         result = mocker.MagicMock()
         result.returncode = 0
         result.stdout = stdout
-        mocker.patch("agent_rank.subprocess.run", return_value=result)
+        mocker.patch("adapters.ranker.agent_with_fallback.subprocess.run", return_value=result)
 
         resume_dir = tmp_path / "resume"
         resume_dir.mkdir(exist_ok=True)
         (resume_dir / "이력서.txt").write_text("이력서", encoding="utf-8")
 
-        import agent_rank
+        from adapters.ranker import agent_with_fallback as agent_rank
         mocker.patch.object(agent_rank, "RESUME_DIR", resume_dir)
 
         return agent_rank.agent_rank(jobs, top_n=top_n)
@@ -155,31 +155,31 @@ class TestJsonParsing:
         result = mocker.MagicMock()
         result.returncode = 1
         result.stderr = "error"
-        mocker.patch("agent_rank.subprocess.run", return_value=result)
+        mocker.patch("adapters.ranker.agent_with_fallback.subprocess.run", return_value=result)
 
         resume_dir = tmp_path / "resume"
         resume_dir.mkdir(exist_ok=True)
         (resume_dir / "이력서.txt").write_text("이력서", encoding="utf-8")
 
-        import agent_rank
+        from adapters.ranker import agent_with_fallback as agent_rank
         mocker.patch.object(agent_rank, "RESUME_DIR", resume_dir)
 
         assert agent_rank.agent_rank(sample_jobs[:1]) is None
 
     def test_claude_CLI_없으면_None_반환(self, sample_jobs, mocker, tmp_path):
-        mocker.patch("agent_rank.subprocess.run", side_effect=FileNotFoundError)
+        mocker.patch("adapters.ranker.agent_with_fallback.subprocess.run", side_effect=FileNotFoundError)
 
         resume_dir = tmp_path / "resume"
         resume_dir.mkdir(exist_ok=True)
         (resume_dir / "이력서.txt").write_text("이력서", encoding="utf-8")
 
-        import agent_rank
+        from adapters.ranker import agent_with_fallback as agent_rank
         mocker.patch.object(agent_rank, "RESUME_DIR", resume_dir)
 
         assert agent_rank.agent_rank(sample_jobs[:1]) is None
 
     def test_이력서_없으면_None_반환(self, sample_jobs, mocker, tmp_path):
-        import agent_rank
+        from adapters.ranker import agent_with_fallback as agent_rank
         mocker.patch.object(agent_rank, "RESUME_DIR", tmp_path / "no_resume")
 
         assert agent_rank.agent_rank(sample_jobs[:1]) is None
