@@ -2,6 +2,9 @@
 
 
 class JsonJobRepository:
+    def __init__(self, exclude_keywords: list[str] | None = None):
+        self._exclude_keywords = exclude_keywords or []
+
     def load(self) -> dict:
         from job_pool import load_pool
         return load_pool()
@@ -20,7 +23,7 @@ class JsonJobRepository:
 
     def candidates(self, pool: dict, mode: str, today: str) -> list[dict]:
         from job_pool import get_candidates
-        return get_candidates(pool, mode=mode, today=today)
+        return get_candidates(pool, mode=mode, today=today, exclude_keywords=self._exclude_keywords)
 
     def summary(self, pool: dict) -> dict:
         from job_pool import pool_summary

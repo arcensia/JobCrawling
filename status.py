@@ -10,11 +10,20 @@
 """
 
 import argparse
+import json
 from datetime import datetime, timedelta
 import requests
 
 from core.config import load_config
-from core.load import load_applied, load_pool
+from core.path import APPLIED_PATH, POOL_PATH
+
+
+def _load_applied() -> list:
+    return json.loads(APPLIED_PATH.read_text(encoding="utf-8")) if APPLIED_PATH.exists() else []
+
+
+def _load_pool() -> dict:
+    return json.loads(POOL_PATH.read_text(encoding="utf-8")) if POOL_PATH.exists() else {}
 
 
 REACTION_LABEL = {
@@ -55,8 +64,8 @@ def _unreviewed_count(pool: dict) -> int:
 
 
 def build_summary(detail: bool = False) -> str:
-    applied = load_applied()
-    pool    = load_pool()
+    applied = _load_applied()
+    pool    = _load_pool()
     today   = datetime.now().strftime("%Y-%m-%d")
 
     groups      = _group_applied(applied)
@@ -88,8 +97,8 @@ def build_summary(detail: bool = False) -> str:
 
 
 def send_to_discord(webhook_url: str):
-    applied = load_applied()
-    pool    = load_pool()
+    applied = _load_applied()
+    pool    = _load_pool()
     today   = datetime.now().strftime("%Y-%m-%d")
 
     groups      = _group_applied(applied)

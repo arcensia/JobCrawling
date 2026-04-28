@@ -1,4 +1,5 @@
 import re
+from typing import Union
 
 from domain.job import Job
 
@@ -13,17 +14,23 @@ _HIGH_CAREER_PATTERNS = [
 ]
 
 
-def is_high_career(job: Job) -> bool:
-    text = " ".join([job.title, job.location, job.company, job.tags, job.experience])
+def _fields(job: Union[Job, dict], keys: list[str]) -> list[str]:
+    if isinstance(job, dict):
+        return [job.get(k, "") for k in keys]
+    return [getattr(job, k, "") for k in keys]
+
+
+def is_high_career(job: Union[Job, dict]) -> bool:
+    text = " ".join(_fields(job, ["title", "location", "company", "tags", "experience"]))
     return any(p.search(text) for p in _HIGH_CAREER_PATTERNS)
 
 
-def has_excluded_keyword(job: Job, exclude_keywords: list[str]) -> bool:
-    text = " ".join([job.title, job.location, job.tags, job.experience]).lower()
+def has_excluded_keyword(job: Union[Job, dict], exclude_keywords: list[str]) -> bool:
+    text = " ".join(_fields(job, ["title", "location", "tags", "experience"])).lower()
     return any(ex.lower() in text for ex in exclude_keywords)
 
 
-def is_candidate(job: Job, exclude_keywords: list[str] | None = None) -> bool:
+def is_candidate(job: Union[Job, dict], exclude_keywords: list[str] | None = None) -> bool:
     if is_high_career(job):
         return False
     if exclude_keywords and has_excluded_keyword(job, exclude_keywords):

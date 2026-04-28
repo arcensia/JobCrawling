@@ -126,7 +126,7 @@ def flush_closed(pool: dict) -> dict:
     return pool
 
 
-def get_candidates(pool: dict, mode: str, today: str, max_days: int = 30) -> list:
+def get_candidates(pool: dict, mode: str, today: str, max_days: int = 30, exclude_keywords: list | None = None) -> list:
     """
     랭킹 후보 반환 — reaction 있는 공고(지원/관심/패스)는 제외.
 
@@ -149,6 +149,10 @@ def get_candidates(pool: dict, mode: str, today: str, max_days: int = 30) -> lis
             continue
         if entry.get("reaction"):       # 이미 반응한 공고 제외
             continue
+        if exclude_keywords:
+            from domain.filter import is_candidate
+            if not is_candidate(entry["job"], exclude_keywords):
+                continue
         if mode == "today":
             if entry["first_seen"] == today:
                 result.append(entry["job"])

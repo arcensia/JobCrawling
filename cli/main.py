@@ -42,7 +42,7 @@ def main(mode: str = "today", no_rank: bool = False):
 
     usecase = RecommendJobs(
         crawler=CompositeCrawler(cfg),
-        repo=JsonJobRepository(),
+        repo=JsonJobRepository(exclude_keywords=cfg.exclude_keywords),
         snapshot_store=MarkdownSnapshotStore(delay=1.2),
         ranker=ranker,
         notifier=DiscordWebhookNotifier(
