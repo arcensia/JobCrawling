@@ -79,7 +79,7 @@ class DiscordWebhookNotifier:
         records = []
 
         for i, job in enumerate(jobs, 1):
-            from snapshot import job_id as make_job_id
+            from domain.job import make_job_id
             jid = make_job_id(job)
             site = job.get("site", "")
             color = SITE_COLORS.get(site, 0x95A5A6)

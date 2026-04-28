@@ -13,7 +13,7 @@ import json
 from datetime import date, timedelta
 from pathlib import Path
 
-from snapshot import job_id as make_job_id
+from domain.job import make_job_id
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"

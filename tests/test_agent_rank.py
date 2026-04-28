@@ -12,7 +12,7 @@ def _make_claude_output(top_items: list) -> str:
 
 def _slim(jobs: list) -> list:
     """agent_rank 내부에서 만드는 slim_jobs 형태 (job_id 필드 추가)."""
-    from snapshot import job_id as make_job_id
+    from domain.job import make_job_id
     return [
         {
             "job_id": make_job_id(j),
@@ -29,7 +29,7 @@ def _slim(jobs: list) -> list:
 class TestPromptBuilding:
     def test_applied_companies_프롬프트_포함(self, sample_jobs, mocker, tmp_path):
         """applied_companies 가 프롬프트에 주입되는지 확인."""
-        from snapshot import job_id as make_job_id
+        from domain.job import make_job_id
 
         slim = _slim(sample_jobs[:1])
         captured = {}

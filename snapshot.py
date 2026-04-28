@@ -4,7 +4,6 @@
 공고 원문 fetch → data/snapshots/{date}/{site}_{company}_{hash}.md 저장
 """
 
-import hashlib
 import shutil
 import time
 from datetime import date, timedelta
@@ -12,6 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from core.path import SNAPSHOTS_DIR
+from domain.job import make_job_id
 
 HEADERS = {
     "User-Agent": (
@@ -34,11 +34,6 @@ def _slug(text: str, maxlen: int = 30) -> str:
     return clean[:maxlen]
 
 
-def _job_id(job: dict) -> str:
-    key = f"{job.get('site','')}{job.get('company','')}{job.get('title','')}"
-    return hashlib.md5(key.encode()).hexdigest()[:8]
-
-
 def fetch_snapshot(job: dict, today: str | None = None) -> str | None:
     """
     공고 URL에서 본문 fetch → markdown 파일로 저장.
@@ -54,7 +49,7 @@ def fetch_snapshot(job: dict, today: str | None = None) -> str | None:
 
     site = job.get("site", "unknown")
     company = _slug(job.get("company", "unknown"))
-    jid = _job_id(job)
+    jid = make_job_id(job)
     filename = f"{site}_{company}_{jid}.md"
     path = day_dir / filename
 
@@ -102,15 +97,11 @@ def fetch_snapshots_batch(jobs: list, today: str | None = None, delay: float = 1
     today = today or date.today().isoformat()
     result = {}
     for job in jobs:
-        jid = _job_id(job)
+        jid = make_job_id(job)
         path = fetch_snapshot(job, today)
         result[jid] = path
         time.sleep(delay)
     return result
-
-
-def job_id(job: dict) -> str:
-    return _job_id(job)
 
 
 def cleanup_old_snapshots(retain_days: int = 30) -> int:

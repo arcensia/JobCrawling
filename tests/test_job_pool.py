@@ -37,7 +37,7 @@ class TestUpdatePool:
         # 다음날 크롤링에서 0번 공고 제외
         pool = update_pool(pool, sample_jobs[1:], "2026-04-21")
 
-        from snapshot import job_id as make_job_id
+        from domain.job import make_job_id
         missing_id = make_job_id(sample_jobs[0])
         assert pool[missing_id]["miss_count"] == 1
         assert pool[missing_id]["status"]     == "open"
@@ -47,7 +47,7 @@ class TestUpdatePool:
         pool = update_pool(pool, sample_jobs[1:], "2026-04-21")
         pool = update_pool(pool, sample_jobs[1:], "2026-04-22")
 
-        from snapshot import job_id as make_job_id
+        from domain.job import make_job_id
         missing_id = make_job_id(sample_jobs[0])
         assert pool[missing_id]["status"]    == "closed"
         assert pool[missing_id]["closed_at"] == "2026-04-22"
@@ -58,7 +58,7 @@ class TestUpdatePool:
         pool = update_pool(pool, sample_jobs[1:], "2026-04-22")  # closed 처리
         pool = update_pool(pool, sample_jobs,     "2026-04-23")  # 다시 등장
 
-        from snapshot import job_id as make_job_id
+        from domain.job import make_job_id
         jid = make_job_id(sample_jobs[0])
         assert pool[jid]["status"] == "closed"   # 복원되지 않음
 

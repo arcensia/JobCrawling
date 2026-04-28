@@ -84,7 +84,7 @@ def agent_rank(
     반환: (top_jobs, rest_jobs) 또는 None(실패 시 fallback 사용)
     top_jobs 각 항목에 _reason, _fit_points, _red_flags 필드 추가됨.
     """
-    from snapshot import job_id as make_job_id
+    from domain.job import make_job_id
 
     resume_path = RESUME_DIR / "이력서.txt"
     career_path = RESUME_DIR / "경력기술서.txt"

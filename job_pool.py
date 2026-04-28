@@ -63,7 +63,7 @@ def save_closed(closed: dict):
 
 def update_pool(pool: dict, fresh_jobs: list, today: str) -> dict:
     """크롤링 결과로 pool 갱신. 누락 2회 이상 → closed."""
-    from snapshot import job_id as make_job_id
+    from domain.job import make_job_id
 
     fresh_ids = {make_job_id(j): j for j in fresh_jobs}
 
