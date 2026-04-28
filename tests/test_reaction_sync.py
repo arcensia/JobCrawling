@@ -17,39 +17,39 @@ class TestParseReaction:
         }
 
     def test_applied_이모지(self):
-        from reaction_sync import _parse_reaction
+        from adapters.sync.reaction import _parse_reaction
         assert _parse_reaction(self._msg([("✅", 1)])) == "applied"
 
     def test_interested_이모지(self):
-        from reaction_sync import _parse_reaction
+        from adapters.sync.reaction import _parse_reaction
         assert _parse_reaction(self._msg([("🎯", 1)])) == "interested"
 
     def test_rejected_이모지(self):
-        from reaction_sync import _parse_reaction
+        from adapters.sync.reaction import _parse_reaction
         assert _parse_reaction(self._msg([("❌", 1)])) == "rejected"
 
     def test_우선순위_applied_우선(self):
-        from reaction_sync import _parse_reaction
+        from adapters.sync.reaction import _parse_reaction
         # ✅ 와 🎯 동시에 — ✅ 가 이겨야 함
         msg = self._msg([("🎯", 1), ("✅", 1)])
         assert _parse_reaction(msg) == "applied"
 
     def test_우선순위_interested_over_rejected(self):
-        from reaction_sync import _parse_reaction
+        from adapters.sync.reaction import _parse_reaction
         msg = self._msg([("❌", 1), ("🎯", 1)])
         assert _parse_reaction(msg) == "interested"
 
     def test_리액션_없음(self):
-        from reaction_sync import _parse_reaction
+        from adapters.sync.reaction import _parse_reaction
         assert _parse_reaction({"reactions": []}) is None
         assert _parse_reaction({}) is None
 
     def test_count_0_은_무시(self):
-        from reaction_sync import _parse_reaction
+        from adapters.sync.reaction import _parse_reaction
         assert _parse_reaction(self._msg([("✅", 0)])) is None
 
     def test_무관한_이모지_무시(self):
-        from reaction_sync import _parse_reaction
+        from adapters.sync.reaction import _parse_reaction
         assert _parse_reaction(self._msg([("😂", 1), ("👍", 1)])) is None
 
 
@@ -59,8 +59,9 @@ class TestSyncOnce:
     """requests + job_pool I/O 모킹하여 동기화 로직 검증."""
 
     def _setup_paths(self, tmp_path, sample_history, sample_applied, monkeypatch):
-        """임시 경로를 reaction_sync 모듈에 주입."""
-        import reaction_sync, job_pool
+        """임시 경로를 reaction 어댑터 모듈에 주입."""
+        from adapters.sync import reaction as reaction_mod
+        import job_pool
 
         hist_path    = tmp_path / "jobs_history.json"
         applied_path = tmp_path / "applied.json"
@@ -74,15 +75,15 @@ class TestSyncOnce:
         )
         pool_path.write_text(json.dumps({}), encoding="utf-8")
 
-        monkeypatch.setattr(reaction_sync, "HISTORY_PATH", hist_path)
-        monkeypatch.setattr(reaction_sync, "APPLIED_PATH", applied_path)
-        monkeypatch.setattr(job_pool,      "POOL_PATH",    pool_path)
+        monkeypatch.setattr(reaction_mod, "HISTORY_PATH", hist_path)
+        monkeypatch.setattr(reaction_mod, "APPLIED_PATH", applied_path)
+        monkeypatch.setattr(job_pool,     "POOL_PATH",    pool_path)
 
         return applied_path, pool_path
 
     def _mock_config(self, mocker):
         mocker.patch(
-            "reaction_sync._load_config",
+            "adapters.sync.reaction._load_config",
             return_value={"discord": {"bot_token": "fake-token", "channel_id": "999"}},
         )
 
@@ -105,20 +106,18 @@ class TestSyncOnce:
             resp.status_code = 404
             return resp
 
-        mocker.patch("reaction_sync.requests.get", side_effect=fake_get)
+        mocker.patch("adapters.sync.reaction.requests.get", side_effect=fake_get)
 
     def test_신규_리액션_applied_json_추가(
         self, tmp_path, sample_history, sample_applied, mocker, monkeypatch
     ):
-        from reaction_sync import sync_once
+        from adapters.sync.reaction import sync_once
 
-        # sample_applied 비운 상태로 시작
         applied_path, _ = self._setup_paths(tmp_path, sample_history, [], monkeypatch)
         self._mock_config(mocker)
-        # 첫 번째 메시지에 ✅ 리액션
         self._mock_message(mocker, {"1111111111111111111": [("✅", 1)]})
 
-        mocker.patch("reaction_sync.time.sleep")
+        mocker.patch("adapters.sync.reaction.time.sleep")
         sync_once()
 
         result = json.loads(applied_path.read_text(encoding="utf-8"))
@@ -127,15 +126,14 @@ class TestSyncOnce:
     def test_리액션_상태_변경(
         self, tmp_path, sample_history, sample_applied, mocker, monkeypatch
     ):
-        from reaction_sync import sync_once
+        from adapters.sync.reaction import sync_once
 
         applied_path, _ = self._setup_paths(
             tmp_path, sample_history, sample_applied, monkeypatch
         )
         self._mock_config(mocker)
-        # aaa11111 은 원래 applied → 🎯(interested) 로 변경
         self._mock_message(mocker, {"1111111111111111111": [("🎯", 1)]})
-        mocker.patch("reaction_sync.time.sleep")
+        mocker.patch("adapters.sync.reaction.time.sleep")
 
         sync_once()
 
@@ -146,15 +144,14 @@ class TestSyncOnce:
     def test_리액션_제거시_applied_json_삭제(
         self, tmp_path, sample_history, sample_applied, mocker, monkeypatch
     ):
-        from reaction_sync import sync_once
+        from adapters.sync.reaction import sync_once
 
         applied_path, _ = self._setup_paths(
             tmp_path, sample_history, sample_applied, monkeypatch
         )
         self._mock_config(mocker)
-        # aaa11111 은 원래 applied 였으나 리액션 제거됨
         self._mock_message(mocker, {"1111111111111111111": []})
-        mocker.patch("reaction_sync.time.sleep")
+        mocker.patch("adapters.sync.reaction.time.sleep")
 
         sync_once()
 
@@ -162,10 +159,10 @@ class TestSyncOnce:
         assert not any(a["job_id"] == "aaa11111" for a in result)
 
     def test_설정_없으면_0_반환(self, mocker):
-        from reaction_sync import sync_once
+        from adapters.sync.reaction import sync_once
 
         mocker.patch(
-            "reaction_sync._load_config",
+            "adapters.sync.reaction._load_config",
             return_value={"discord": {}},
         )
         assert sync_once() == 0

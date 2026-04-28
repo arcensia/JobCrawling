@@ -23,7 +23,7 @@ def _load_applied_companies() -> list[str]:
 
 def _sync_reactions_safely() -> None:
     try:
-        from reaction_sync import sync_once
+        from adapters.sync.reaction import sync_once
         sync_once()
     except Exception:
         logging.getLogger(__name__).exception("[sync] 리액션 동기화 실패 (계속 진행)")
