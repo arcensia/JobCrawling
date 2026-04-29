@@ -10,6 +10,7 @@ from adapters.repository.json_pool import JsonJobRepository
 from adapters.snapshot.markdown_store import MarkdownSnapshotStore
 from adapters.ranker.keyword import KeywordRanker
 from adapters.ranker.agent_with_fallback import AgentWithFallbackRanker
+from adapters.ranker.ollama_ranker import OllamaRanker
 from adapters.notifier.discord_webhook import DiscordWebhookNotifier
 from usecase.recommend_today import RecommendJobs
 
@@ -29,16 +30,18 @@ def _sync_reactions_safely() -> None:
         logging.getLogger(__name__).exception("[sync] 리액션 동기화 실패 (계속 진행)")
 
 
-def main(mode: str = "today", no_rank: bool = False):
+def main(mode: str = "today", no_rank: bool = False, ranker_type: str = "claude"):
     cfg = load_config()
 
     _sync_reactions_safely()
 
-    ranker = (
-        KeywordRanker()
-        if no_rank
-        else AgentWithFallbackRanker(mode=mode, applied_companies=_load_applied_companies())
-    )
+    applied = _load_applied_companies()
+    if no_rank:
+        ranker = KeywordRanker()
+    elif ranker_type == "ollama":
+        ranker = OllamaRanker(mode=mode, applied_companies=applied)
+    else:
+        ranker = AgentWithFallbackRanker(mode=mode, applied_companies=applied)
 
     usecase = RecommendJobs(
         crawler=CompositeCrawler(cfg),
@@ -63,5 +66,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["today", "cumulative", "review"], default="today")
     parser.add_argument("--no-rank", action="store_true")
+    parser.add_argument("--ranker", choices=["claude", "ollama"], default="claude")
     args = parser.parse_args()
-    main(mode=args.mode, no_rank=args.no_rank)
+    main(mode=args.mode, no_rank=args.no_rank, ranker_type=args.ranker)
